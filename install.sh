@@ -1,5 +1,25 @@
+#!/bin/bash
+
+function updateOrInstall(){
+    local -n appArray=$1
+    for app in ${appArray[@]}; do
+        if ! dpkg-query -W $app >/dev/null 2>$1; then
+            sudo apt --assume-yes install $app
+        else
+            printf "${app} already installed, you're good to go\n"
+        fi
+    done
+}
+
+# Get Linux version
+NAME=$(sed -n -e '/NAME/ s/.*= *//p' /etc/os-release)
+VERSION_ID=$(sed -n -e '/VERSION_ID/ s/.*= *//p' /etc/os-release)
+
 # Update system
 sudo apt autoclean && sudo apt autoremove && sudo apt update && sudo apt upgrade -y
+essentialPackages=("build-essential" "wget" "curl" "git" "unzip")
+
+updateOrInstall essentialPackages
 
 
 # Installing and configuring MySQL Server
@@ -16,10 +36,8 @@ GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextcloud'@'localhost' IDENTIFIED BY 'so
 FLUSH PRIVILEGES;
 
 # Installing PHP and configuring Apache
-sudo apt install -y php php-apcu php-bcmath \
-    php-cli php-common php-curl php-dg php-gmp \
-    php-imagick php-intl php-mbstring php-mysql \
-    php-zip php-xml
+apachePackages=("php" "php-apcu" "php-bcmath" "php-cli" "php-common" "php-curl" "php-dg" "php-gmp" "php-imagick" "php-intl" "php-mbstring" "php-mysql" "php-zip" "php-xml")
+updateOrInstall apachePackages
 
 sudo a2enmod dir env headers mime rewrite ssl
 sudo systemctl restart apache2
